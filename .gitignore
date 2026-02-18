@@ -1,0 +1,27 @@
+# compiler
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+
+# VS temps
+.vs/
+*.user
+*.aps
+*.opendb
+*.pdb
+*.ilk
+*.sqlitedb
+
+# bin
+*.exe
+*.obj
+*.o
+*.lib
+*.dll
+*.a
+*.so
+
+# system files
+.DS_Store
+Thumbs.db
