@@ -24,6 +24,7 @@ x86/
 *.sln
 *.slnx
 *.vcxproj
+*.vcxproj.filters
 
 # system files
 .DS_Store
