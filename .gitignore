@@ -21,6 +21,8 @@ x86/
 *.dll
 *.a
 *.so
+*.sln
+*.vcxproj
 
 # system files
 .DS_Store

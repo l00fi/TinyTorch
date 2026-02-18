@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="TinyTorch/TinyTorch.vcxproj" Id="16be5265-1775-4923-94e0-e74df543551d" />
+</Solution>
