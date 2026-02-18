@@ -1,9 +1,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 #include "Tensor.h"
 
-tensor* tensor_new(vector* data, vector* shape) {
+tensor* tensor_(vector* data, vector* shape) {
     if (data == NULL || shape == NULL) return NULL;
 
     tensor* t = malloc(sizeof(tensor));
@@ -14,13 +15,13 @@ tensor* tensor_new(vector* data, vector* shape) {
     for (int i = 0; i < rank; ++i) {
         elements_in_tensor *= (int)shape->data[i];
     }
-    // Дополнить потом!
+    // Проверка на размерность и кол-во элементов
     if (data->size != elements_in_tensor) return NULL;
 
     t->data = data;
     t->shape = shape;
 
-    vector* strides = vector_new(rank);
+    vector* strides = vector_empty(rank);
 
     for (size_t i = 0; i < rank; i++) {
         vector_append(strides, 0.0f);
@@ -44,7 +45,7 @@ float tensor_get(tensor* t, vector* idx) {
     if (idx == NULL || idx->data == NULL) return NAN;
 
     if (t->shape->size != idx->size) return NAN;
-
+    //Проверка на корректность индексов
     for (int i = 0; i < t->shape->size; ++i) {
         if (idx->data[i] + 1 > t->shape->data[i] || idx->data[i] < 0) return NAN;
     }

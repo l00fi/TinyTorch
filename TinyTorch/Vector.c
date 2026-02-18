@@ -1,10 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 #include "vector.h"
 
 
-vector* vector_new(size_t capacity) {
+vector* vector_empty(size_t capacity) {
 	vector* v = malloc(sizeof(vector));
 	// Проверка, что память есть для структуры
 	if (v == NULL) return NULL;
@@ -20,26 +21,27 @@ vector* vector_new(size_t capacity) {
 	return v;
 }
 
-//vector* vector_new(size_t capacity, float data[]) {
-//	vector* v = malloc(sizeof(vector));
-//	// Проверка, что память есть для структуры
-//	if (v == NULL) return NULL;
-//	v->size = capacity;
-//	v->capacity = capacity;
-//
-//	v->data = malloc(capacity * sizeof(float));
-//	for (int i = 0; i < capacity; ++i) {
-//		v->data[i] = data[i];
-//	}
-//
-//	// Проверка, что память есть и для данных
-//	if (v->data == NULL) {
-//		//Если нет - очищаем память
-//		free(v);
-//		return NULL;
-//	}
-//	return v;
-//}
+vector* vector_(size_t capacity, float data[]) {
+	vector* v = malloc(sizeof(vector));
+	// Проверка, что память есть для структуры
+	if (v == NULL) return NULL;
+	v->size = capacity;
+	v->capacity = capacity;
+
+	v->data = malloc(capacity * sizeof(float));
+	// Проверка, что память есть и для данных
+	if (v->data == NULL) {
+		//Если нет - очищаем память
+		free(v);
+		return NULL;
+	}
+	else {
+		// Копирование одной области памяти в другую
+		memcpy(v->data, data, capacity * sizeof(float));
+	}
+
+	return v;
+}
 
 void vector_destroy(vector* v) {
 	if (v == NULL) return;
@@ -96,7 +98,7 @@ vector* vector_add(vector* v1, vector* v2) {
 	if (v1 == NULL || v2 == NULL) return NULL;
 
 	size_t new_size = v1->size + v2->size;
-	vector* v3 = vector_new(new_size);
+	vector* v3 = vector_empty(new_size);
 
 	for (int i = 0; i < v1->size; ++i) {
 		vector_append(v3, v1->data[i]);
@@ -114,7 +116,7 @@ vector* vector_sum(vector* v1, vector* v2) {
 
 	if (v1->size != v2->size) return NULL;
 
-	vector* v3 = vector_new(v1->size);
+	vector* v3 = vector_empty(v1->size);
 	v3->size = v1->size;
 
 	for (int i = 0; i < v1->size; ++i) {

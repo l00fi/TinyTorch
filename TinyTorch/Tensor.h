@@ -9,8 +9,8 @@ typedef struct {
 	vector* strides;
 } tensor;
 
-tensor* tensor_new(vector* data, vector* shape);
-float tensor_get(tensor* data, vector* idx);
+tensor* tensor_(vector* data, vector* shape);
+float   tensor_get(tensor* data, vector* idx);
 
 #endif
 

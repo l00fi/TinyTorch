@@ -1,49 +1,21 @@
 ﻿#include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <string.h>
 #include "Vector.h"
 #include "Tensor.h"
 
 main() {
-	//vector* v1 = vector_new(2);
-	//vector_append(v1, 1);
-	//vector_append(v1, 2);
-	//vector_append(v1, 3);
-	//vector_append(v1, 4);
+	float v_arr[8] = { 0.0f, 1.0f, 2.0f, 3.0f, 4.0f, 5.0f, 6.0f, 7.0f };
+	vector* v = vector_(8, v_arr);
 
-	//vector* v2 = vector_new(2);
-	//vector_append(v2, 5);
-	//vector_append(v2, 6);
-	//vector_append(v2, 7);
-	//vector_append(v2, 8);
+	float shape_arr[3] = { 2.0f, 2.0f, 2.0f };
+	vector* shape = vector_(3, shape_arr);
 
-	//vector* v3 = vector_add(v1, v2);
+	tensor* t = tensor_(v, shape);
 
-	//vector_edit(v3, -1, 1);
-
-	//vector_print(v3);
-
-	//float data[2] = { 1.0f, 2.0f };
-	//vector* v = vector_new(2, data);
-	//vector_print(v);
-
-	vector* v = vector_new(8);
-	for (int i = 0; i < 8; ++i) {
-		vector_append(v, i);
-	}
-
-	vector* shape = vector_new(3);
-	vector_append(shape, 2);
-	vector_append(shape, 2);
-	vector_append(shape, 2);
-
-	tensor* t = tensor_new(v, shape);
-	vector_print(t->strides);
-
-	vector* idx = vector_new(3);
-	vector_append(idx, 1);
-	vector_append(idx, 1);
-	vector_append(idx, 1);
+	float idx_arr[3] = { 1.0f, 1.0f, 1.0f };
+	vector* idx = vector_(3, idx_arr);
 
 	printf("%.1f\n", tensor_get(t, idx));
 
