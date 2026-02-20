@@ -10,7 +10,7 @@ typedef struct {
 } tensor;
 
 tensor* tensor_(vector* data, vector* shape);
-float   tensor_get(tensor* data, vector* idx);
+void*   tensor_get(tensor* data, vector* idx);
 
 #endif
 
