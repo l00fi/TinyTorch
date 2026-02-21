@@ -125,7 +125,19 @@ vector* vector_add(vector* v1, vector* v2) {
 	return v3;
 }
 
-vector* vector_sum(vector* v1, vector* v2) {
+vector* vector_copy(vector* v) {
+	if (v == NULL) return NULL;
+
+	vector* new_v = vector_(v->capacity, v->data, v->item_size);
+
+	if (new_v != NULL) {
+		new_v->size = v->size;
+	}
+
+	return new_v;
+}
+
+vector* vector_sum(vector* v1, vector* v2, DataType type) {
 	if (v1 == NULL || v2 == NULL) return NULL;
 
 	if (v1->size != v2->size) return NULL;
@@ -135,15 +147,21 @@ vector* vector_sum(vector* v1, vector* v2) {
 	vector* v3 = vector_empty(v1->size, v1->item_size);
 
 	for (int i = 0; i < v1->size; ++i) {
-		float sum = *(float*)vector_get(v1, i) + *(float*)vector_get(v2, i);
-		vector_append(v3, &sum);
+		if (type == FLOAT) {
+			float sum = *(float*)vector_get(v1, i) + *(float*)vector_get(v2, i);
+			vector_append(v3, &sum);
+		}
+		if (type == INT) {
+			int sum = *(int*)vector_get(v1, i) + *(int*)vector_get(v2, i);
+			vector_append(v3, &sum);
+		}
+		if (type == DOUBLE) {
+			double sum = *(double*)vector_get(v1, i) + *(double*)vector_get(v2, i);
+			vector_append(v3, &sum);
+		}
 	}
 
 	return v3;
-}
-
-void float_(void* ptr) {
-	printf("%.2f", *(float*)ptr);
 }
 
 void vector_print(vector* v, void (*print_func)(void*)) {
@@ -157,4 +175,16 @@ void vector_print(vector* v, void (*print_func)(void*)) {
 		if (i < v->size - 1) printf(", ");
 	}
 	printf("]\n");
+}
+
+void vfloat(void* ptr) {
+	printf("%.2f", *(float*)ptr);
+}
+
+void vint(void* ptr) {
+	printf("%d", *(int*)ptr);
+}
+
+void vdouble(void* ptr) {
+	printf("%.4f", *(double*)ptr);
 }

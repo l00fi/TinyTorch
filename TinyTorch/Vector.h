@@ -3,6 +3,12 @@
 
 #include <stddef.h>
 
+typedef enum {
+    FLOAT,
+    INT,
+    DOUBLE
+} DataType;
+
 typedef struct {
     void* data;
     size_t size;
@@ -17,8 +23,12 @@ void    vector_destroy(vector* v);
 void    vector_append(vector* v, void* val);
 void    vector_edit(vector* v, int index, void* new_value);
 vector* vector_add(vector* v1, vector* v2);
-vector* vector_sum(vector* v1, vector* v2);
-void    float_(void* ptr);
+vector* vector_copy(vector* v);
+vector* vector_sum(vector* v1, vector* v2, DataType type);
 void    vector_print(vector* v, void (*print_func)(void*));
+void    vfloat(void* ptr);
+void    vint(void* ptr);
+void    vdouble(void* ptr);
+
 
 #endif;
