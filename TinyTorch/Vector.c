@@ -46,13 +46,13 @@ vector* vector_(size_t capacity, void* data, size_t item_size) {
 }
 
 void* vector_get(vector* v, int index) {
-	if (v == NULL || v->data == NULL) return;
+	if (v == NULL || v->data == NULL) return NULL;
 
 	int true_index = index;
 
 	if (index < 0) true_index = (int)v->size + index;
 
-	if (true_index < 0 || (size_t)true_index >= v->size) return;
+	if (true_index < 0 || (size_t)true_index >= v->size) return NULL;
 
 	//Теперь прыгаем по байтам, а не обращаемся к индексу, т.к void* data
 	char* base = (char*)v->data;
@@ -73,7 +73,8 @@ void vector_append(vector* v, void* val) {
 	if (v == NULL) return;
 	// Если элементов и доступной памяти равное кол-во, то нужно увеличить объём памяти
 	if (v->size == v->capacity) {
-		size_t new_capacity = v->capacity * 2;
+		// +1 если v->capacity == 0
+		size_t new_capacity = (v->capacity + 1) * 2;
 		//realloc либо увеличивает размер памяти вправо, либо ищет область памяти нужного размера
 		float* temp = realloc(v->data, new_capacity * v->item_size);
 
@@ -106,7 +107,7 @@ void vector_edit(vector* v, int index, void* new_value) {
 	memcpy(target_address, new_value, v->item_size);
 }
 
-vector* vector_add(vector* v1, vector* v2) {
+vector* vector_merge(vector* v1, vector* v2) {
 	if (v1 == NULL || v2 == NULL) return NULL;
 
 	if (v1->item_size != v2->item_size) return NULL;
@@ -150,14 +151,16 @@ vector* vector_sum(vector* v1, vector* v2, DataType type) {
 		if (type == FLOAT) {
 			float sum = *(float*)vector_get(v1, i) + *(float*)vector_get(v2, i);
 			vector_append(v3, &sum);
-		}
-		if (type == INT) {
+		} else if (type == INT) {
 			int sum = *(int*)vector_get(v1, i) + *(int*)vector_get(v2, i);
 			vector_append(v3, &sum);
-		}
-		if (type == DOUBLE) {
+		} else if (type == DOUBLE) {
 			double sum = *(double*)vector_get(v1, i) + *(double*)vector_get(v2, i);
 			vector_append(v3, &sum);
+		}
+		else {
+			vector_destroy(v3);
+			return NULL;
 		}
 	}
 
