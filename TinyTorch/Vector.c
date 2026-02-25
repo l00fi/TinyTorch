@@ -4,15 +4,42 @@
 #include <string.h>
 #include "vector.h"
 
+float vfloat(void* ptr) {
+	return *(float*)ptr;
+}
 
-vector* vector_empty(size_t capacity, size_t item_size) {
+int vint(void* ptr) {
+	return *(int*)ptr;
+}
+
+double vdouble(void* ptr) {
+	return *(double*)ptr;
+}
+
+
+vector* vector_empty(size_t capacity, DataType type) {
 	vector* v = malloc(sizeof(vector));
 	// Проверка, что память есть для структуры
 	if (v == NULL) return NULL;
+
+	v->type = type;
+	if (type == FLOAT) {
+		v->item_size = sizeof(float);
+	}
+	else if (type == INT) {
+		v->item_size = sizeof(int);
+	}
+	else if (type == DOUBLE) {
+		v->item_size = sizeof(double);
+	}
+	else {
+		free(v);
+		return NULL;
+	}
+
 	v->size = 0;
 	v->capacity = capacity;
-	v->item_size = item_size;
-	v->data = malloc(capacity * item_size);
+	v->data = malloc(capacity * v->item_size);
 	// Проверка, что память есть и для данных
 	if (v->data == NULL) {
 		//Если нет - очищаем память
@@ -22,15 +49,30 @@ vector* vector_empty(size_t capacity, size_t item_size) {
 	return v;
 }
 
-vector* vector_(size_t capacity, void* data, size_t item_size) {
+vector* vector_(size_t capacity, void* data, DataType type) {
 	vector* v = malloc(sizeof(vector));
 	// Проверка, что память есть для структуры
 	if (v == NULL) return NULL;
+
+	v->type = type;
+	if (type == FLOAT) {
+		v->item_size = sizeof(float);
+	}
+	else if (type == INT) {
+		v->item_size = sizeof(int);
+	}
+	else if (type == DOUBLE) {
+		v->item_size = sizeof(double);
+	}
+	else {
+		free(v);
+		return NULL;
+	}
+
 	v->size = capacity;
 	v->capacity = capacity;
-	v->item_size = item_size;
 
-	v->data = malloc(capacity * item_size);
+	v->data = malloc(capacity * v->item_size);
 	// Проверка, что память есть и для данных
 	if (v->data == NULL) {
 		//Если нет - очищаем память
@@ -39,7 +81,7 @@ vector* vector_(size_t capacity, void* data, size_t item_size) {
 	}
 	else {
 		// Копирование одной области памяти в другую
-		memcpy(v->data, data, capacity * item_size);
+		memcpy(v->data, data, capacity * v->item_size);
 	}
 
 	return v;
@@ -109,11 +151,10 @@ void vector_edit(vector* v, int index, void* new_value) {
 
 vector* vector_merge(vector* v1, vector* v2) {
 	if (v1 == NULL || v2 == NULL) return NULL;
-
-	if (v1->item_size != v2->item_size) return NULL;
+	if (v1->type != v2->type) return NULL;
 
 	size_t new_size = v1->size + v2->size;
-	vector* v3 = vector_empty(new_size, v1->item_size);
+	vector* v3 = vector_empty(new_size, v1->type);
 
 	for (int i = 0; i < v1->size; ++i) {
 		vector_append(v3, vector_get(v1, i));
@@ -129,7 +170,7 @@ vector* vector_merge(vector* v1, vector* v2) {
 vector* vector_copy(vector* v) {
 	if (v == NULL) return NULL;
 
-	vector* new_v = vector_(v->capacity, v->data, v->item_size);
+	vector* new_v = vector_(v->capacity, v->data, v->type);
 
 	if (new_v != NULL) {
 		new_v->size = v->size;
@@ -138,24 +179,22 @@ vector* vector_copy(vector* v) {
 	return new_v;
 }
 
-vector* vector_sum(vector* v1, vector* v2, DataType type) {
+vector* vector_sum(vector* v1, vector* v2) {
 	if (v1 == NULL || v2 == NULL) return NULL;
-
 	if (v1->size != v2->size) return NULL;
+	if (v1->type != v2->type) return NULL;
 
-	if (v1->item_size != v2->item_size) return NULL;
-
-	vector* v3 = vector_empty(v1->size, v1->item_size);
+	vector* v3 = vector_empty(v1->size, v1->type);
 
 	for (int i = 0; i < v1->size; ++i) {
-		if (type == FLOAT) {
-			float sum = *(float*)vector_get(v1, i) + *(float*)vector_get(v2, i);
+		if (v1->type == FLOAT) {
+			float sum = vfloat(vector_get(v1, i)) + vfloat(vector_get(v2, i));
 			vector_append(v3, &sum);
-		} else if (type == INT) {
-			int sum = *(int*)vector_get(v1, i) + *(int*)vector_get(v2, i);
+		} else if (v1->type == INT) {
+			int sum = vint(vector_get(v1, i)) + vint(vector_get(v2, i));
 			vector_append(v3, &sum);
-		} else if (type == DOUBLE) {
-			double sum = *(double*)vector_get(v1, i) + *(double*)vector_get(v2, i);
+		} else if (v1->type == DOUBLE) {
+			double sum = vdouble(vector_get(v1, i)) + vdouble(vector_get(v2, i));
 			vector_append(v3, &sum);
 		}
 		else {
@@ -167,27 +206,28 @@ vector* vector_sum(vector* v1, vector* v2, DataType type) {
 	return v3;
 }
 
-void vector_print(vector* v, void (*print_func)(void*)) {
+void vector_print(vector* v) {
 	if (v == NULL) {
 		printf("[NULL]\n");
 		return;
 	}
+
 	printf("[");
-	for (size_t i = 0; i < v->size; ++i) {
-		print_func(vector_get(v, (int)i));
-		if (i < v->size - 1) printf(", ");
+	for (int i = 0; i < (int)v->size; ++i) {
+		if (v->type == INT) {
+			printf("%d", vint(vector_get(v, i)));
+		}
+		else if (v->type == FLOAT) {
+			printf("%.2f", vfloat(vector_get(v, i)));
+		}
+		else if (v->type == DOUBLE) {
+			printf("%.4f", vdouble(vector_get(v, i)));
+		}
+		else {
+			printf("[NULL]\n");
+		return; 
+		}
+		if (i < ((int)v->size - 1)) printf(", ");
 	}
 	printf("]\n");
-}
-
-void vfloat(void* ptr) {
-	printf("%.2f", *(float*)ptr);
-}
-
-void vint(void* ptr) {
-	printf("%d", *(int*)ptr);
-}
-
-void vdouble(void* ptr) {
-	printf("%.4f", *(double*)ptr);
 }

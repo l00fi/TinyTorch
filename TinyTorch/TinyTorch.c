@@ -8,6 +8,7 @@
 #include "TinyTorch.h"
 
 main() {	
+	// ------------- Тесты -------------
 	printf("Starting TinyTorch Unit Tests...\n\n");
 
 	RUN_TEST(vector_emptyCorrect_init);
@@ -25,13 +26,19 @@ main() {
 	RUN_TEST(vector_sumCorrect_works_int);
 	RUN_TEST(vector_sumCorrect_works_float);
 	RUN_TEST(vector_sumCorrect_works_double);
+
 	RUN_TEST(tensor_Correct_init);
 	RUN_TEST(tensor_getCorrect_works);
 	RUN_TEST(tensor_sumCorrect_works_int);
 	RUN_TEST(tensor_sumCorrect_works_float);
 	RUN_TEST(tensor_sumCorrect_works_double);
+	RUN_TEST(tensor_TCorrect_works);
+	RUN_TEST(tensor_sumTTensor);
+	RUN_TEST(tensor_scalar_multCorrect_works);
+	RUN_TEST(tensor_hadamard_multCorrect_works);
 
 	print_test_report();
+	// ---------------------------------
 
 	return (global_state.failed_count > 0);
 }

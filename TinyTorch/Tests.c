@@ -10,7 +10,7 @@ TestState global_state = { 0, 0, 0, {NULL}, {0} };
 // --- реярш ---
 
 int vector_emptyCorrect_init() {
-    vector* v = vector_empty(5, sizeof(float));
+    vector* v = vector_empty(5, FLOAT);
 
     if (v == NULL) {
         vector_destroy(v);
@@ -18,6 +18,7 @@ int vector_emptyCorrect_init() {
     }
     int result = (v->size == 0) && \
         (v->capacity == 5) && \
+        (v->type == FLOAT) && \
         (v->item_size == sizeof(float)) && \
         (v->data != NULL);
 
@@ -28,7 +29,7 @@ int vector_emptyCorrect_init() {
 
 int vector_Correct_init() {
     float data[5] = { 1, 2, 3, 4, 5 };
-    vector* v = vector_(5, data, sizeof(float));
+    vector* v = vector_(5, &data, FLOAT);
 
     if (v == NULL) {
         vector_destroy(v);
@@ -36,6 +37,7 @@ int vector_Correct_init() {
     }
     int result = (v->size == 5) && \
         (v->capacity == 5) && \
+        (v->type == FLOAT) && \
         (v->item_size == sizeof(float)) && \
         (v->data != NULL);
 
@@ -46,7 +48,7 @@ int vector_Correct_init() {
 
 int vector_Empty_arr() {
     float data[5];
-    vector* v = vector_(5, data, sizeof(float));
+    vector* v = vector_(5, &data, FLOAT);
 
     if (v == NULL) {
         vector_destroy(v);
@@ -54,6 +56,7 @@ int vector_Empty_arr() {
     }
     int result = (v->size == 5) && \
         (v->capacity == 5) && \
+        (v->type == FLOAT) && \
         (v->item_size == sizeof(float)) && \
         (v->data != NULL);
 
@@ -64,9 +67,9 @@ int vector_Empty_arr() {
 
 int vector_getPositive_index() {
     float val_arr[1] = { 42.0f };
-    vector* v = vector_(1, val_arr, sizeof(float));
+    vector* v = vector_(1, &val_arr, FLOAT);
 
-    float retrieved = *(float*)vector_get(v, 0);
+    float retrieved = vfloat(vector_get(v, 0));
     int result = (retrieved == 42.0f);
 
     vector_destroy(v);
@@ -76,9 +79,9 @@ int vector_getPositive_index() {
 
 int vector_getNegative_index() {
     float val_arr[1] = { 42.0f };
-    vector* v = vector_(1, val_arr, sizeof(float));
+    vector* v = vector_(1, &val_arr, FLOAT);
 
-    float retrieved = *(float*)vector_get(v, -1);
+    float retrieved = vfloat(vector_get(v, -1));
     int result = (retrieved == 42.0f);
 
     vector_destroy(v);
@@ -87,13 +90,13 @@ int vector_getNegative_index() {
 }
 
 int vector_appendCorrect_works() {
-    vector* v = vector_empty(0, sizeof(float));
+    vector* v = vector_empty(0, FLOAT);
     float val = 42.0f;
     vector_append(v, &val);
 
     int result = ((int)v->capacity == 2) && \
         ((int)v->size == 1) && \
-        (*(float*)vector_get(v, 0) == 42.0f);
+        (vfloat(vector_get(v, 0)) == 42.0f);
 
     vector_destroy(v);
 
@@ -102,11 +105,11 @@ int vector_appendCorrect_works() {
 
 int vector_editPositive_index() {
     float val_arr[1] = { 42.0f };
-    vector* v = vector_(1, val_arr, sizeof(float));
+    vector* v = vector_(1, &val_arr, FLOAT);
     float new_val = 43.0f;
     vector_edit(v, 0, &new_val);
 
-    int result = (*(float*)vector_get(v, 0) == 43.0f);
+    int result = (vfloat(vector_get(v, 0)) == 43.0f);
 
     vector_destroy(v);
 
@@ -115,11 +118,11 @@ int vector_editPositive_index() {
 
 int vector_editNegative_index() {
     float val_arr[1] = { 42.0f };
-    vector* v = vector_(1, val_arr, sizeof(float));
+    vector* v = vector_(1, &val_arr, FLOAT);
     float new_val = 43.0f;
     vector_edit(v, -1, &new_val);
 
-    int result = (*(float*)vector_get(v, 0) == 43.0f);
+    int result = (vfloat(vector_get(v, 0)) == 43.0f);
 
     vector_destroy(v);
 
@@ -128,9 +131,9 @@ int vector_editNegative_index() {
 
 int vector_mergeCorrect_works() {
     float val_arr_a[1] = { 1.0f };
-    vector* v_a = vector_(1, val_arr_a, sizeof(float));
+    vector* v_a = vector_(1, &val_arr_a, FLOAT);
     float val_arr_b[1] = { 2.0f };
-    vector* v_b = vector_(1, val_arr_b, sizeof(float));
+    vector* v_b = vector_(1, &val_arr_b, FLOAT);
 
     vector* v_c = vector_merge(v_a, v_b);
     if (v_c == NULL) {
@@ -141,6 +144,7 @@ int vector_mergeCorrect_works() {
 
     int result = (v_c->size == 2) && \
         (v_c->capacity == 2) && \
+        (v_c->type == FLOAT) && \
         (v_c->item_size == sizeof(float)) && \
         (v_c->data != NULL);
 
@@ -152,9 +156,9 @@ int vector_mergeCorrect_works() {
 }
 
 int vector_mergeWith_zero_size_vector() {
-    vector* v_a = vector_empty(0, sizeof(float));
+    vector* v_a = vector_empty(0, FLOAT);
     float val_arr_b[1] = { 2.0f };
-    vector* v_b = vector_(1, val_arr_b, sizeof(float));
+    vector* v_b = vector_(1, &val_arr_b, FLOAT);
 
     vector* v_c = vector_merge(v_a, v_b);
     if (v_c == NULL) {
@@ -165,6 +169,7 @@ int vector_mergeWith_zero_size_vector() {
 
     int result = (v_c->size == 1) && \
         (v_c->capacity == 1) && \
+        (v_c->type == FLOAT) && \
         (v_c->item_size == sizeof(float)) && \
         (v_c->data != NULL);
 
@@ -176,8 +181,8 @@ int vector_mergeWith_zero_size_vector() {
 }
 
 int vector_mergeWith_zero_size_vectors() {
-    vector* v_a = vector_empty(0, sizeof(float));
-    vector* v_b = vector_empty(0, sizeof(float));
+    vector* v_a = vector_empty(0, FLOAT);
+    vector* v_b = vector_empty(0, FLOAT);
 
     vector* v_c = vector_merge(v_a, v_b);
     if (v_c == NULL) {
@@ -188,6 +193,7 @@ int vector_mergeWith_zero_size_vectors() {
 
     int result = (v_c->size == 0) && \
         (v_c->capacity == 0) && \
+        (v_c->type == FLOAT)  && \
         (v_c->item_size == sizeof(float)) && \
         (v_c->data != NULL);
 
@@ -200,7 +206,7 @@ int vector_mergeWith_zero_size_vectors() {
 
 int vector_copyCorrect_works() {
     float val_arr[1] = { 1.0f };
-    vector* v = vector_(1, val_arr, sizeof(float));
+    vector* v = vector_(1, &val_arr, FLOAT);
 
     vector* v_copy = vector_copy(v);
 
@@ -211,6 +217,7 @@ int vector_copyCorrect_works() {
 
     int result = (v_copy->size == 1) && \
         (v_copy->capacity == 1) && \
+        (v_copy->type == FLOAT) && \
         (v_copy->item_size == sizeof(float)) && \
         (v_copy->data != NULL) && \
         (v->data != v_copy->data) && \
@@ -225,11 +232,11 @@ int vector_copyCorrect_works() {
 
 int vector_sumCorrect_works_int() {
     int val_arr_a[1] = { 1 };
-    vector* v_a = vector_(1, val_arr_a, sizeof(int));
+    vector* v_a = vector_(1, &val_arr_a, INT);
     int val_arr_b[1] = { 2 };
-    vector* v_b = vector_(1, val_arr_b, sizeof(int));
+    vector* v_b = vector_(1, &val_arr_b, INT);
 
-    vector* v_c = vector_sum(v_a, v_b, INT);
+    vector* v_c = vector_sum(v_a, v_b);
     if (v_c == NULL) {
         vector_destroy(v_a);
         vector_destroy(v_b);
@@ -237,6 +244,7 @@ int vector_sumCorrect_works_int() {
     }
 
     int result = (v_c->size == 1) && \
+        (v_c->type == INT) && \
         (v_c->item_size == sizeof(int)) && \
         (v_c->capacity == 1) && \
         (v_c->data != NULL) && \
@@ -251,11 +259,11 @@ int vector_sumCorrect_works_int() {
 
 int vector_sumCorrect_works_float() {
     float val_arr_a[1] = { 1.0f };
-    vector* v_a = vector_(1, val_arr_a, sizeof(float));
+    vector* v_a = vector_(1, &val_arr_a, FLOAT);
     float val_arr_b[1] = { 2.0f };
-    vector* v_b = vector_(1, val_arr_b, sizeof(float));
+    vector* v_b = vector_(1, &val_arr_b, FLOAT);
 
-    vector* v_c = vector_sum(v_a, v_b, FLOAT);
+    vector* v_c = vector_sum(v_a, v_b);
     if (v_c == NULL) {
         vector_destroy(v_a);
         vector_destroy(v_b);
@@ -263,6 +271,7 @@ int vector_sumCorrect_works_float() {
     }
 
     int result = (v_c->size == 1) && \
+        (v_c->type == FLOAT) && \
         (v_c->item_size == sizeof(float)) && \
         (v_c->capacity == 1) && \
         (v_c->data != NULL) && \
@@ -277,11 +286,11 @@ int vector_sumCorrect_works_float() {
 
 int vector_sumCorrect_works_double() {
     double val_arr_a[1] = { 1.0f };
-    vector* v_a = vector_(1, val_arr_a, sizeof(double));
+    vector* v_a = vector_(1, &val_arr_a, DOUBLE);
     double val_arr_b[1] = { 2.0f };
-    vector* v_b = vector_(1, val_arr_b, sizeof(double));
+    vector* v_b = vector_(1, &val_arr_b, DOUBLE);
 
-    vector* v_c = vector_sum(v_a, v_b, DOUBLE);
+    vector* v_c = vector_sum(v_a, v_b);
     if (v_c == NULL) {
         vector_destroy(v_a);
         vector_destroy(v_b);
@@ -289,6 +298,7 @@ int vector_sumCorrect_works_double() {
     }
 
     int result = (v_c->size == 1) && \
+        (v_c->type == DOUBLE) && \
         (v_c->item_size == sizeof(double)) && \
         (v_c->capacity == 1) && \
         (v_c->data != NULL) && \
@@ -304,8 +314,8 @@ int vector_sumCorrect_works_double() {
 int tensor_Correct_init() {
     float val_arr[1] = { 1.0f };
     int shape_arr[1] = { 1 };
-    vector* val = vector_(1, val_arr, sizeof(float));
-    vector* shape = vector_(1, shape_arr, sizeof(int));
+    vector* val = vector_(1, &val_arr, FLOAT);
+    vector* shape = vector_(1, &shape_arr, INT);
     tensor* t = tensor_(val, shape);
 
     if (t == NULL) {
@@ -317,9 +327,10 @@ int tensor_Correct_init() {
     int result = (t->data != NULL) && \
         (t->shape != NULL) && \
         (t->strides != NULL) && \
-        (*(float*)vector_get(t->data, 0) == 1.0f) && \
-        (*(int*)vector_get(t->shape, 0) == 1) && \
-        (*(int*)vector_get(t->strides, 0) == 1);
+        (t->type == FLOAT) && \
+        (vfloat(vector_get(t->data, 0)) == 1.0f) && \
+        (vint(vector_get(t->shape, 0)) == 1) && \
+        (vint(vector_get(t->strides, 0)) == 1);
 
     vector_destroy(val);
     vector_destroy(shape);
@@ -331,12 +342,12 @@ int tensor_Correct_init() {
 int tensor_getCorrect_works() {
     float val_arr[1] = { 1.0f };
     int shape_arr[1] = { 1 };
-    vector* val = vector_(1, val_arr, sizeof(float));
-    vector* shape = vector_(1, shape_arr, sizeof(int));
+    vector* val = vector_(1, &val_arr, FLOAT);
+    vector* shape = vector_(1, &shape_arr, INT);
     tensor* t = tensor_(val, shape);
 
     int idx_arr[1] = { 0 };
-    vector* idx = vector_(1, idx_arr, sizeof(int));
+    vector* idx = vector_(1, &idx_arr, INT);
 
     void* result_val = tensor_get(t, idx);
     if (result_val == NULL) {
@@ -347,7 +358,12 @@ int tensor_getCorrect_works() {
         return 0;
     }
 
-    int result = (*(float*)result_val == 1.0f);
+    int result = (vfloat(result_val) == 1.0f);
+
+    vector_destroy(val);
+    vector_destroy(shape);
+    vector_destroy(idx);
+    tensor_destroy(t);
 
     return result;
 }
@@ -355,15 +371,15 @@ int tensor_getCorrect_works() {
 int tensor_sumCorrect_works_int() {
     int val_arr[1] = { 1 };
     int shape_arr[1] = { 1 };
-    vector* val = vector_(1, val_arr, sizeof(int));
-    vector* shape = vector_(1, shape_arr, sizeof(int));
+    vector* val = vector_(1, &val_arr, INT);
+    vector* shape = vector_(1, &shape_arr, INT);
     tensor* t1 = tensor_(val, shape);
     tensor* t2 = tensor_(val, shape);
 
     int idx_arr[1] = { 0 };
-    vector* idx = vector_(1, idx_arr, sizeof(int));
+    vector* idx = vector_(1, &idx_arr, INT);
 
-    tensor* t3 = tensor_sum(t1, t2, INT);
+    tensor* t3 = tensor_sum(t1, t2);
     if (t3 == NULL) {
         vector_destroy(val);
         vector_destroy(shape);
@@ -377,9 +393,17 @@ int tensor_sumCorrect_works_int() {
     int result = (t3->data != NULL) && \
         (t3->shape != NULL) && \
         (t3->strides != NULL) && \
+        (t3->type == INT) && \
         (*(int*)vector_get(t3->data, 0) == 2) && \
         (*(int*)vector_get(t3->shape, 0) == 1) && \
         (*(int*)vector_get(t3->strides, 0) == 1);
+
+    vector_destroy(val);
+    vector_destroy(shape);
+    vector_destroy(idx);
+    tensor_destroy(t1);
+    tensor_destroy(t2);
+    tensor_destroy(t3);
 
     return result;
 }
@@ -387,15 +411,15 @@ int tensor_sumCorrect_works_int() {
 int tensor_sumCorrect_works_float() {
     float val_arr[1] = { 1.0f };
     int shape_arr[1] = { 1 };
-    vector* val = vector_(1, val_arr, sizeof(float));
-    vector* shape = vector_(1, shape_arr, sizeof(int));
+    vector* val = vector_(1, &val_arr, FLOAT);
+    vector* shape = vector_(1, &shape_arr, INT);
     tensor* t1 = tensor_(val, shape);
     tensor* t2 = tensor_(val, shape);
 
     int idx_arr[1] = { 0 };
-    vector* idx = vector_(1, idx_arr, sizeof(int));
+    vector* idx = vector_(1, &idx_arr, INT);
 
-    tensor* t3 = tensor_sum(t1, t2, FLOAT);
+    tensor* t3 = tensor_sum(t1, t2);
     if (t3 == NULL) {
         vector_destroy(val);
         vector_destroy(shape);
@@ -409,9 +433,17 @@ int tensor_sumCorrect_works_float() {
     int result = (t3->data != NULL) && \
         (t3->shape != NULL) && \
         (t3->strides != NULL) && \
+        (t3->type == FLOAT) && \
         (*(float*)vector_get(t3->data, 0) == 2.0f) && \
         (*(int*)vector_get(t3->shape, 0) == 1) && \
         (*(int*)vector_get(t3->strides, 0) == 1);
+
+    vector_destroy(val);
+    vector_destroy(shape);
+    vector_destroy(idx);
+    tensor_destroy(t1);
+    tensor_destroy(t2);
+    tensor_destroy(t3);
 
     return result;
 }
@@ -419,15 +451,15 @@ int tensor_sumCorrect_works_float() {
 int tensor_sumCorrect_works_double() {
     double val_arr[1] = { 1.0f };
     int shape_arr[1] = { 1 };
-    vector* val = vector_(1, val_arr, sizeof(double));
-    vector* shape = vector_(1, shape_arr, sizeof(int));
+    vector* val = vector_(1, &val_arr, DOUBLE);
+    vector* shape = vector_(1, &shape_arr, INT);
     tensor* t1 = tensor_(val, shape);
     tensor* t2 = tensor_(val, shape);
 
     int idx_arr[1] = { 0 };
-    vector* idx = vector_(1, idx_arr, sizeof(int));
+    vector* idx = vector_(1, &idx_arr, INT);
 
-    tensor* t3 = tensor_sum(t1, t2, DOUBLE);
+    tensor* t3 = tensor_sum(t1, t2);
     if (t3 == NULL) {
         vector_destroy(val);
         vector_destroy(shape);
@@ -441,9 +473,158 @@ int tensor_sumCorrect_works_double() {
     int result = (t3->data != NULL) && \
         (t3->shape != NULL) && \
         (t3->strides != NULL) && \
+        (t3->type == DOUBLE) && \
         (*(double*)vector_get(t3->data, 0) == 2) && \
         (*(int*)vector_get(t3->shape, 0) == 1) && \
         (*(int*)vector_get(t3->strides, 0) == 1);
+
+    vector_destroy(val);
+    vector_destroy(shape);
+    vector_destroy(idx);
+    tensor_destroy(t1);
+    tensor_destroy(t2);
+    tensor_destroy(t3);
+
+    return result;
+}
+
+int tensor_TCorrect_works() {
+    int val_arr[4] = { 1, 2, 3, 4 };
+    int shape_arr[2] = { 2, 2 };
+    vector* val = vector_(4, &val_arr, INT);
+    vector* shape = vector_(2, &shape_arr, INT);
+    tensor* t = tensor_(val, shape);
+
+    tensor_T(t);
+    
+    int idx_arr[2] = {0, 1};
+    vector* idx = vector_(2, &idx_arr, INT);
+
+    int result = (t->strides != NULL) && \
+        (vint(vector_get(t->strides, 0)) == 1) && \
+        (t->data != NULL) && \
+        (*(int*)tensor_get(t, idx) == 3);
+
+    tensor_destroy(t);
+    vector_destroy(val);
+    vector_destroy(shape);
+    vector_destroy(idx);
+
+    return result;
+}
+
+int tensor_sumTTensor() {
+    int val_arr[4] = { 1, 2, 3, 4 };
+    int shape_arr[2] = { 2, 2 };
+    vector* val = vector_(4, &val_arr, INT);
+    vector* shape = vector_(2, &shape_arr, INT);
+    tensor* t1 = tensor_(val, shape);
+    tensor* t2 = tensor_(val, shape);
+    tensor_T(t2);
+
+    int idx_arr[2] = { 0, 1 };
+    vector* idx = vector_(2, &idx_arr, INT);
+
+    tensor* t3 = tensor_sum(t1, t2);
+    if (t3 == NULL) {
+        vector_destroy(val);
+        vector_destroy(shape);
+        vector_destroy(idx);
+        tensor_destroy(t1);
+        tensor_destroy(t2);
+        return 0;
+    }
+
+    int result = (t3->data != NULL) && \
+        (t3->shape != NULL) && \
+        (t3->strides != NULL) && \
+        (t3->type == INT) && \
+        (vint(tensor_get(t3, idx)) == 5) && \
+        (vint(vector_get(t3->shape, 0)) == 2) && \
+        (vint(vector_get(t3->strides, 0)) == 2);
+
+    vector_destroy(val);
+    vector_destroy(shape);
+    vector_destroy(idx);
+    tensor_destroy(t1);
+    tensor_destroy(t2);
+    tensor_destroy(t3);
+
+    return result;
+}
+
+int tensor_scalar_multCorrect_works() {
+    int val_arr[4] = { 1, 2, 3, 4 };
+    int shape_arr[2] = { 2, 2 };
+    vector* val = vector_(4, &val_arr, INT);
+    vector* shape = vector_(2, &shape_arr, INT);
+    tensor* t = tensor_(val, shape);
+
+    int scalar = 2;
+    tensor* t_result = tensor_scalar_mult(t, &scalar);
+
+    if (t_result == NULL) {
+        vector_destroy(val);
+        vector_destroy(shape);
+        tensor_destroy(t);
+        return 0;
+    }
+
+    int result_empty_data = (t_result->data != NULL) && \
+        (t_result->shape != NULL) && \
+        (t_result->strides != NULL) && \
+        (t_result->type == INT);
+
+    int total_sum = 0;
+    for (int i = 0; i < (int)t_result->data->size; ++i) {
+        total_sum += vint(vector_get(t_result->data, i));
+    }
+
+    int result = result_empty_data && (total_sum == 20);
+
+    vector_destroy(val);
+    vector_destroy(shape);
+    tensor_destroy(t);
+    tensor_destroy(t_result);
+
+    return result;
+}
+
+int tensor_hadamard_multCorrect_works() {
+    int val_arr[4] = { 1, 2, 3, 4 };
+    int shape_arr[2] = { 2, 2 };
+    vector* val = vector_(4, &val_arr, INT);
+    vector* shape = vector_(2, &shape_arr, INT);
+    tensor* t1 = tensor_(val, shape);
+    tensor* t2 = tensor_(val, shape);
+
+    tensor* t_result = tensor_hadamard_mult(t1, t2);
+
+    if (t_result == NULL) {
+        tensor_destroy(t1);
+        tensor_destroy(t2);
+        vector_destroy(val);
+        vector_destroy(shape);
+        return 0;
+    }
+
+    int result_empty_data = (t_result->data != NULL) && \
+        (t_result->shape != NULL) && \
+        (t_result->strides != NULL) && \
+        (t_result->type == INT);
+
+    int total_sum = 0;
+    for (int i = 0; i < (int)t_result->data->size; ++i) {
+        total_sum += vint(vector_get(t_result->data, i));
+    }
+
+    int result = result_empty_data && (total_sum == 30);
+
+    tensor_destroy(t1);
+    tensor_destroy(t2);
+    tensor_destroy(t_result);
+    vector_destroy(val);
+    vector_destroy(shape);
 
     return result;
 }
