@@ -73,10 +73,10 @@ void* tensor_get(tensor* t, vector* idx) {
 
     if (idx == NULL || idx->data == NULL) return NULL;
 
-    if (t->shape->size != idx->size) return;
+    if (t->shape->size != idx->size) return NULL;
     //Проверка на корректность индексов
     for (int i = 0; i < t->shape->size; ++i) {
-        if (vint(vector_get(idx, i)) + 1 > vint(vector_get(t->shape, i)) || vint(vector_get(idx, i)) < 0) return;
+        if (vint(vector_get(idx, i)) + 1 > vint(vector_get(t->shape, i)) || vint(vector_get(idx, i)) < 0) return NULL;
     }
 
     int true_index = 0;
@@ -88,13 +88,13 @@ void* tensor_get(tensor* t, vector* idx) {
 }
 
 // Переношу значение тензора согласно shape
-void __tensor_values_by_shape(tensor* t, vector* rez, int dim_idx, int offset) {
+static void __tensor_values_by_shape(tensor* t, vector* rez, int dim_idx, int offset) {
     if (t == NULL) {
         printf("[NULL]\n");
         return;
     }
 
-    int shape_size = t->shape->size;
+    int shape_size = (int)t->shape->size;
     // Базовый случай, когда доходим до shape[-1]
     if (dim_idx == shape_size - 1) {
         int last = vint(vector_get(t->shape, dim_idx));
@@ -269,7 +269,7 @@ void tensor_print(tensor* t, int dim_idx, int offset) {
         return;
     }
 
-    int shape_size = t->shape->size;
+    int shape_size = (int)t->shape->size;
     // Базовый случай, когда доходим до shape[-1]
     if (dim_idx == shape_size - 1) {
         int last = vint(vector_get(t->shape, dim_idx));
