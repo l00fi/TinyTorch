@@ -87,6 +87,25 @@ void* tensor_get(tensor* t, vector* idx) {
     return vector_get(t->data, true_index);
 }
 
+void tensor_edit(tensor* t, vector* idx, void* val) {
+    if (t == NULL || t->data == NULL) return NULL;
+
+    if (idx == NULL || idx->data == NULL) return NULL;
+
+    if (t->shape->size != idx->size) return NULL;
+    //Проверка на корректность индексов
+    for (int i = 0; i < t->shape->size; ++i) {
+        if (vint(vector_get(idx, i)) + 1 > vint(vector_get(t->shape, i)) || vint(vector_get(idx, i)) < 0) return NULL;
+    }
+
+    int true_index = 0;
+    for (int i = 0; i < t->strides->size; ++i) {
+        true_index += vint(vector_get(t->strides, i)) * vint(vector_get(idx, i));
+    }
+
+    vector_edit(t->data, true_index, val);
+}
+
 // Переношу значение тензора согласно shape
 static void __tensor_values_by_shape(tensor* t, vector* rez, int dim_idx, int offset) {
     if (t == NULL) {
@@ -228,16 +247,73 @@ tensor* tensor_hadamard_mult(tensor* t1, tensor* t2) {
     return t3;
 }
 
-tensor* tensor_mult_2d(tensor* t1, tensor* t2, DataType type) {
-    if (t1 == NULL || t2 == NULL) return NULL;
-    if (t1->type != t2->type) return NULL;
+// В будущем static
+tensor* tensor_mult_2d(tensor* t1, tensor* t2) {
+    if (t1 == NULL || t2 == NULL || t1->type != t2->type) return NULL;
+
+    int I = vint(vector_get(t1->shape, 0));
+    int K = vint(vector_get(t1->shape, -1));
+    int J = vint(vector_get(t2->shape, -1));
 
     if (vint(vector_get(t1->shape, -1)) != vint(vector_get(t2->shape, 0))) return NULL;
-    
-    return 0;
+
+    int res_shape_arr[2] = { I, J };
+    vector* res_shape = vector_(2, res_shape_arr, INT);
+
+    // Перенести в tensor_empty
+    vector* res_data = vector_empty(I * J, t1->type);
+    for (int i = 0; i < I * J; i++) {
+        float zero = 0;
+        vector_append(res_data, &zero);
+    }
+
+    tensor* t3 = tensor_(res_data, res_shape);
+
+    int idx_arr1[2], idx_arr2[2], idx_res[2];
+    vector* v_idx1 = vector_(2, idx_arr1, INT);
+    vector* v_idx2 = vector_(2, idx_arr2, INT);
+    vector* v_res = vector_(2, idx_res, INT);
+
+    for (int i = 0; i < I; ++i) {
+        for (int j = 0; j < J; ++j) {
+            float sum_f = 0;
+            int sum_i = 0;
+            double sum_d = 0;
+
+            for (int k = 0; k < K; ++k) {
+                vector_edit(v_idx1, 0, &i); vector_edit(v_idx1, 1, &k);
+                vector_edit(v_idx2, 0, &k); vector_edit(v_idx2, 1, &j);
+
+                if (t1->type == FLOAT) {
+                    sum_f += vfloat(tensor_get(t1, v_idx1)) * vfloat(tensor_get(t2, v_idx2));
+                }
+                else if (t1->type == INT) {
+                    sum_i += vint(tensor_get(t1, v_idx1)) * vint(tensor_get(t2, v_idx2));
+                }
+                else if (t1->type == DOUBLE) {
+                    sum_d += vdouble(tensor_get(t1, v_idx1)) * vdouble(tensor_get(t2, v_idx2));
+                }
+                else {
+                    return NULL;
+                }
+            }
+
+            vector_edit(v_res, 0, &i); vector_edit(v_res, 1, &j);
+            if (t1->type == FLOAT) tensor_edit(t3, v_res, &sum_f);
+            else if (t1->type == INT) tensor_edit(t3, v_res, &sum_i);
+            else if (t1->type == DOUBLE) tensor_edit(t3, v_res, &sum_d);
+            else return NULL;
+        }
+    }
+
+    vector_destroy(v_idx1);
+    vector_destroy(v_idx2);
+    vector_destroy(v_res);
+
+    return t3;
 }
 
-tensor* tensor_mult(tensor* t1, tensor* t2, DataType type) {
+tensor* tensor_mult(tensor* t1, tensor* t2) {
     return 0;
 }
 
