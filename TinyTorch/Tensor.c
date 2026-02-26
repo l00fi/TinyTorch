@@ -275,40 +275,41 @@ tensor* tensor_mult_2d(tensor* t1, tensor* t2) {
     vector* v_res = vector_(2, idx_res, INT);
 
     for (int i = 0; i < I; ++i) {
-        for (int j = 0; j < J; ++j) {
-            float sum_f = 0;
-            int sum_i = 0;
-            double sum_d = 0;
+        for (int k = 0; k < K; ++k) {
 
-            for (int k = 0; k < K; ++k) {
-                vector_edit(v_idx1, 0, &i); vector_edit(v_idx1, 1, &k);
+            vector_edit(v_idx1, 0, &i); vector_edit(v_idx1, 1, &k);
+            void* left_on_sum = tensor_get(t1, v_idx1);
+            for (int j = 0; j < J; ++j) {
                 vector_edit(v_idx2, 0, &k); vector_edit(v_idx2, 1, &j);
+                vector_edit(v_res, 0, &i); vector_edit(v_res, 1, &j);
 
                 if (t1->type == FLOAT) {
-                    sum_f += vfloat(tensor_get(t1, v_idx1)) * vfloat(tensor_get(t2, v_idx2));
+                    float mult_f = vfloat(left_on_sum) * vfloat(tensor_get(t2, v_idx2));
+                    float on_add = vfloat(tensor_get(t3, v_res)) + mult_f;
+                    tensor_edit(t3, v_res, &on_add);
                 }
                 else if (t1->type == INT) {
-                    sum_i += vint(tensor_get(t1, v_idx1)) * vint(tensor_get(t2, v_idx2));
+                    int mult_i = vint(left_on_sum) * vint(tensor_get(t2, v_idx2));
+                    int on_add = vint(tensor_get(t3, v_res)) + mult_i;
+                    tensor_edit(t3, v_res, &on_add);
                 }
                 else if (t1->type == DOUBLE) {
-                    sum_d += vdouble(tensor_get(t1, v_idx1)) * vdouble(tensor_get(t2, v_idx2));
+                    double mult_d = vdouble(left_on_sum) * vdouble(tensor_get(t2, v_idx2));
+                    double on_add = vdouble(tensor_get(t3, v_res)) + mult_d;
+                    tensor_edit(t3, v_res, &on_add);
                 }
                 else {
                     return NULL;
                 }
             }
-
-            vector_edit(v_res, 0, &i); vector_edit(v_res, 1, &j);
-            if (t1->type == FLOAT) tensor_edit(t3, v_res, &sum_f);
-            else if (t1->type == INT) tensor_edit(t3, v_res, &sum_i);
-            else if (t1->type == DOUBLE) tensor_edit(t3, v_res, &sum_d);
-            else return NULL;
         }
     }
 
     vector_destroy(v_idx1);
     vector_destroy(v_idx2);
     vector_destroy(v_res);
+
+    tensor_print(t3, 0, 0);
 
     return t3;
 }
