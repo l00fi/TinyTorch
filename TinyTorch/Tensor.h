@@ -18,8 +18,7 @@ void	tensor_edit(tensor* t, vector* idx, void* val);						// Реадктирование тенз
 void	tensor_T(tensor* t);												// Транспонирование
 tensor* tensor_sum(tensor* t1, tensor* t2);									// Сумма двух тензоров
 tensor* tensor_scalar_mult(tensor* t, void* scalar);						// Скалярное произведение
-tensor* tensor_hadamard_mult(tensor* t1, tensor* t2);						// Поэлементное умножение 
-tensor* tensor_mult_2d(tensor* t1, tensor* t2);								// Умножение матриц
+tensor* tensor_hadamard_mult(tensor* t1, tensor* t2);						// Поэлементное умножение
 tensor* tensor_mult(tensor* t1, tensor* t2);								// Умножение тензоров
 void	tensor_print(tensor* t, int dim_idx, int offset);					// Вывод тензора на терминал
 

@@ -247,75 +247,161 @@ tensor* tensor_hadamard_mult(tensor* t1, tensor* t2) {
     return t3;
 }
 
-// В будущем static
-tensor* tensor_mult_2d(tensor* t1, tensor* t2) {
-    if (t1 == NULL || t2 == NULL || t1->type != t2->type) return NULL;
+// Тоже вайбкодик, точнее вайбкод над моей реализацией перемножения матриц
+static void tensor_mult_2d(tensor* t1, tensor* t2, tensor* t3,
+    int off1, int off2, int off3) {
 
-    int I = vint(vector_get(t1->shape, 0));
-    int K = vint(vector_get(t1->shape, -1));
-    int J = vint(vector_get(t2->shape, -1));
-
-    if (vint(vector_get(t1->shape, -1)) != vint(vector_get(t2->shape, 0))) return NULL;
-
-    int res_shape_arr[2] = { I, J };
-    vector* res_shape = vector_(2, res_shape_arr, INT);
-
-    // Перенести в tensor_empty
-    vector* res_data = vector_empty(I * J, t1->type);
-    for (int i = 0; i < I * J; i++) {
-        float zero = 0;
-        vector_append(res_data, &zero);
-    }
-
-    tensor* t3 = tensor_(res_data, res_shape);
-
-    int idx_arr1[2], idx_arr2[2], idx_res[2];
-    vector* v_idx1 = vector_(2, idx_arr1, INT);
-    vector* v_idx2 = vector_(2, idx_arr2, INT);
-    vector* v_res = vector_(2, idx_res, INT);
-
+    // 1. Предварительно вытаскиваем размеры и страйды (ОПТИМИЗАЦИЯ)
+    // Нам нужны страйды последних двух измерений (-2 и -1)
+    int rank = (int)t1->shape->size;
+    
+    int I = vint(vector_get(t1->shape, rank - 2));
+    int K = vint(vector_get(t1->shape, rank - 1));
+    int J = vint(vector_get(t2->shape, rank - 1));
+    
+    int s1_i = vint(vector_get(t1->strides, rank - 2));
+    int s1_k = vint(vector_get(t1->strides, rank - 1));
+    
+    int s2_k = vint(vector_get(t2->strides, rank - 2));
+    int s2_j = vint(vector_get(t2->strides, rank - 1));
+    
+    int s3_i = vint(vector_get(t3->strides, rank - 2));
+    int s3_j = vint(vector_get(t3->strides, rank - 1));
+    
+    // 2. Тройной цикл (i, k, j)
     for (int i = 0; i < I; ++i) {
         for (int k = 0; k < K; ++k) {
-
-            vector_edit(v_idx1, 0, &i); vector_edit(v_idx1, 1, &k);
-            void* left_on_sum = tensor_get(t1, v_idx1);
+    
+            // Находим адрес элемента A[i][k] с учетом глобального оффсета
+            int idx1 = off1 + (i * s1_i + k * s1_k);
+            void* val_a_ptr = vector_get(t1->data, idx1);
+    
             for (int j = 0; j < J; ++j) {
-                vector_edit(v_idx2, 0, &k); vector_edit(v_idx2, 1, &j);
-                vector_edit(v_res, 0, &i); vector_edit(v_res, 1, &j);
-
+                // Находим адрес элемента B[k][j]
+                int idx2 = off2 + (k * s2_k + j * s2_j);
+                // Находим адрес элемента Res[i][j]
+                int idx3 = off3 + (i * s3_i + j * s3_j);
+    
                 if (t1->type == FLOAT) {
-                    float mult_f = vfloat(left_on_sum) * vfloat(tensor_get(t2, v_idx2));
-                    float on_add = vfloat(tensor_get(t3, v_res)) + mult_f;
-                    tensor_edit(t3, v_res, &on_add);
+                    float a = vfloat(val_a_ptr);
+                    float b = vfloat(vector_get(t2->data, idx2));
+    
+                    // Читаем старое значение, прибавляем, пишем обратно
+                    float current = vfloat(vector_get(t3->data, idx3));
+                    float updated = current + (a * b);
+                    vector_edit(t3->data, idx3, &updated);
                 }
                 else if (t1->type == INT) {
-                    int mult_i = vint(left_on_sum) * vint(tensor_get(t2, v_idx2));
-                    int on_add = vint(tensor_get(t3, v_res)) + mult_i;
-                    tensor_edit(t3, v_res, &on_add);
+                    int a = vint(val_a_ptr);
+                    int b = vint(vector_get(t2->data, idx2));
+    
+                    // Читаем старое значение, прибавляем, пишем обратно
+                    int current = vint(vector_get(t3->data, idx3));
+                    int updated = current + (a * b);
+                    vector_edit(t3->data, idx3, &updated);
                 }
                 else if (t1->type == DOUBLE) {
-                    double mult_d = vdouble(left_on_sum) * vdouble(tensor_get(t2, v_idx2));
-                    double on_add = vdouble(tensor_get(t3, v_res)) + mult_d;
-                    tensor_edit(t3, v_res, &on_add);
-                }
-                else {
-                    return NULL;
+                    double a = vdouble(val_a_ptr);
+                    double b = vdouble(vector_get(t2->data, idx2));
+    
+                    // Читаем старое значение, прибавляем, пишем обратно
+                    double current = vdouble(vector_get(t3->data, idx3));
+                    double updated = current + (a * b);
+                    vector_edit(t3->data, idx3, &updated);
                 }
             }
         }
     }
-
-    vector_destroy(v_idx1);
-    vector_destroy(v_idx2);
-    vector_destroy(v_res);
-
-    tensor_print(t3, 0, 0);
-
-    return t3;
 }
 
+// Вайбкодик, нужно поразбираться
+static void __matmul_rec(tensor* A, tensor* B, tensor* Res,
+    int dim_idx, int offA, int offB, int offRes) {
+
+    int rank = A->shape->size;
+
+    // БАЗОВЫЙ СЛУЧАЙ: Мы дошли до последних двух измерений (матриц)
+    if (dim_idx == rank - 2) {
+        tensor_mult_2d(A, B, Res, offA, offB, offRes);
+        return;
+    }
+
+    // РЕКУРСИВНЫЙ ШАГ: Идем по текущему батч-измерению
+    int current_dim_size = vint(vector_get(A->shape, dim_idx));
+
+    for (int i = 0; i < current_dim_size; i++) {
+        // Считаем новые смещения для следующего уровня
+        int next_offA = offA + (i * vint(vector_get(A->strides, dim_idx)));
+        int next_offB = offB + (i * vint(vector_get(B->strides, dim_idx)));
+        int next_offRes = offRes + (i * vint(vector_get(Res->strides, dim_idx)));
+
+        // Уходим глубже
+        __matmul_rec(A, B, Res, dim_idx + 1, next_offA, next_offB, next_offRes);
+    }
+}
+
+// И это вайбкод
 tensor* tensor_mult(tensor* t1, tensor* t2) {
-    return 0;
+    if (t1 == NULL || t2 == NULL || t1->type != t2->type) return NULL;
+
+    size_t rank = t1->shape->size;
+
+    // 1. Проверка рангов (должны совпадать для Batch MatMul)
+    if (rank != t2->shape->size) {
+        printf("Error: Tensors must have the same rank for MatMul\n");
+        return NULL;
+    }
+
+    // 2. Проверка совместимости батч-измерений (все, кроме последних двух)
+    for (int i = 0; i < (int)rank - 2; i++) {
+        if (vint(vector_get(t1->shape, i)) != vint(vector_get(t2->shape, i))) {
+            printf("Error: Batch dimensions must match at index %d\n", i);
+            return NULL;
+        }
+    }
+
+    // 3. Проверка матричных измерений (K-измерение)
+    // t1: [..., M, K], t2: [..., K, N]
+    int K1 = vint(vector_get(t1->shape, -1));
+    int K2 = vint(vector_get(t2->shape, -2));
+    if (K1 != K2) {
+        printf("Error: Matrix dimensions mismatch: %d != %d\n", K1, K2);
+        return NULL;
+    }
+
+    // 4. Формируем форму результирующего тензора
+    // Она будет [Batch..., M, N]
+    vector* res_shape = vector_copy(t1->shape);
+    int N_val = vint(vector_get(t2->shape, -1));
+    vector_edit(res_shape, -1, &N_val); // Меняем K на N
+
+    // 5. Создаем данные для результата, заполненные нулями
+    // Нам нужны нули, потому что в internal_2d мы делаем += (аккумуляцию)
+    size_t total_elements = 1;
+    for (size_t i = 0; i < res_shape->size; i++) {
+        total_elements *= vint(vector_get(res_shape, (int)i));
+    }
+
+    vector* res_data = vector_empty(total_elements, t1->type);
+    if (t1->type == FLOAT) {
+        float zero = 0.0f;
+        for (size_t i = 0; i < total_elements; i++) vector_append(res_data, &zero);
+    }
+    else if (t1->type == INT) {
+        int zero = 0;
+        for (size_t i = 0; i < total_elements; i++) vector_append(res_data, &zero);
+    }
+    else if (t1->type == DOUBLE) {
+        double zero = 0.0f;
+        for (size_t i = 0; i < total_elements; i++) vector_append(res_data, &zero);
+    }
+    tensor* res = tensor_(res_data, res_shape);
+
+    // 6. ЗАПУСК РЕКУРСИИ
+    // Начинаем с 0-го измерения и нулевых сдвигов
+    __matmul_rec(t1, t2, res, 0, 0, 0, 0);
+
+    return res;
 }
 
 void tensor_T(tensor* t) {
