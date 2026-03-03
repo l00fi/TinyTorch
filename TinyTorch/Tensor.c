@@ -247,12 +247,9 @@ tensor* tensor_hadamard_mult(tensor* t1, tensor* t2) {
     return t3;
 }
 
-// Тоже вайбкодик, точнее вайбкод над моей реализацией перемножения матриц
 static void tensor_mult_2d(tensor* t1, tensor* t2, tensor* t3,
     int off1, int off2, int off3) {
 
-    // 1. Предварительно вытаскиваем размеры и страйды (ОПТИМИЗАЦИЯ)
-    // Нам нужны страйды последних двух измерений (-2 и -1)
     int rank = (int)t1->shape->size;
     
     int I = vint(vector_get(t1->shape, rank - 2));
@@ -268,7 +265,7 @@ static void tensor_mult_2d(tensor* t1, tensor* t2, tensor* t3,
     int s3_i = vint(vector_get(t3->strides, rank - 2));
     int s3_j = vint(vector_get(t3->strides, rank - 1));
     
-    // 2. Тройной цикл (i, k, j)
+    // цикл i, k, j - оптимизация
     for (int i = 0; i < I; ++i) {
         for (int k = 0; k < K; ++k) {
     
@@ -286,7 +283,6 @@ static void tensor_mult_2d(tensor* t1, tensor* t2, tensor* t3,
                     float a = vfloat(val_a_ptr);
                     float b = vfloat(vector_get(t2->data, idx2));
     
-                    // Читаем старое значение, прибавляем, пишем обратно
                     float current = vfloat(vector_get(t3->data, idx3));
                     float updated = current + (a * b);
                     vector_edit(t3->data, idx3, &updated);
@@ -294,8 +290,7 @@ static void tensor_mult_2d(tensor* t1, tensor* t2, tensor* t3,
                 else if (t1->type == INT) {
                     int a = vint(val_a_ptr);
                     int b = vint(vector_get(t2->data, idx2));
-    
-                    // Читаем старое значение, прибавляем, пишем обратно
+
                     int current = vint(vector_get(t3->data, idx3));
                     int updated = current + (a * b);
                     vector_edit(t3->data, idx3, &updated);
@@ -304,7 +299,6 @@ static void tensor_mult_2d(tensor* t1, tensor* t2, tensor* t3,
                     double a = vdouble(val_a_ptr);
                     double b = vdouble(vector_get(t2->data, idx2));
     
-                    // Читаем старое значение, прибавляем, пишем обратно
                     double current = vdouble(vector_get(t3->data, idx3));
                     double updated = current + (a * b);
                     vector_edit(t3->data, idx3, &updated);
@@ -314,69 +308,49 @@ static void tensor_mult_2d(tensor* t1, tensor* t2, tensor* t3,
     }
 }
 
-// Вайбкодик, нужно поразбираться
 static void __matmul_rec(tensor* A, tensor* B, tensor* Res,
     int dim_idx, int offA, int offB, int offRes) {
 
     int rank = A->shape->size;
 
-    // БАЗОВЫЙ СЛУЧАЙ: Мы дошли до последних двух измерений (матриц)
     if (dim_idx == rank - 2) {
         tensor_mult_2d(A, B, Res, offA, offB, offRes);
         return;
     }
 
-    // РЕКУРСИВНЫЙ ШАГ: Идем по текущему батч-измерению
+    // Рекурсия: идем по текущему батч-измерению
     int current_dim_size = vint(vector_get(A->shape, dim_idx));
 
     for (int i = 0; i < current_dim_size; i++) {
-        // Считаем новые смещения для следующего уровня
+        // Новые смещения
         int next_offA = offA + (i * vint(vector_get(A->strides, dim_idx)));
         int next_offB = offB + (i * vint(vector_get(B->strides, dim_idx)));
         int next_offRes = offRes + (i * vint(vector_get(Res->strides, dim_idx)));
 
-        // Уходим глубже
         __matmul_rec(A, B, Res, dim_idx + 1, next_offA, next_offB, next_offRes);
     }
 }
 
-// И это вайбкод
 tensor* tensor_mult(tensor* t1, tensor* t2) {
     if (t1 == NULL || t2 == NULL || t1->type != t2->type) return NULL;
 
     size_t rank = t1->shape->size;
+    if (rank != t2->shape->size) return NULL;
 
-    // 1. Проверка рангов (должны совпадать для Batch MatMul)
-    if (rank != t2->shape->size) {
-        printf("Error: Tensors must have the same rank for MatMul\n");
-        return NULL;
-    }
-
-    // 2. Проверка совместимости батч-измерений (все, кроме последних двух)
     for (int i = 0; i < (int)rank - 2; i++) {
-        if (vint(vector_get(t1->shape, i)) != vint(vector_get(t2->shape, i))) {
-            printf("Error: Batch dimensions must match at index %d\n", i);
-            return NULL;
-        }
+        if (vint(vector_get(t1->shape, i)) != vint(vector_get(t2->shape, i))) return NULL;
     }
 
-    // 3. Проверка матричных измерений (K-измерение)
-    // t1: [..., M, K], t2: [..., K, N]
+
     int K1 = vint(vector_get(t1->shape, -1));
     int K2 = vint(vector_get(t2->shape, -2));
-    if (K1 != K2) {
-        printf("Error: Matrix dimensions mismatch: %d != %d\n", K1, K2);
-        return NULL;
-    }
+    if (K1 != K2) return NULL;
 
-    // 4. Формируем форму результирующего тензора
-    // Она будет [Batch..., M, N]
+    // Форма результирующего тензора
     vector* res_shape = vector_copy(t1->shape);
     int N_val = vint(vector_get(t2->shape, -1));
     vector_edit(res_shape, -1, &N_val); // Меняем K на N
 
-    // 5. Создаем данные для результата, заполненные нулями
-    // Нам нужны нули, потому что в internal_2d мы делаем += (аккумуляцию)
     size_t total_elements = 1;
     for (size_t i = 0; i < res_shape->size; i++) {
         total_elements *= vint(vector_get(res_shape, (int)i));
@@ -397,8 +371,6 @@ tensor* tensor_mult(tensor* t1, tensor* t2) {
     }
     tensor* res = tensor_(res_data, res_shape);
 
-    // 6. ЗАПУСК РЕКУРСИИ
-    // Начинаем с 0-го измерения и нулевых сдвигов
     __matmul_rec(t1, t2, res, 0, 0, 0, 0);
 
     return res;
