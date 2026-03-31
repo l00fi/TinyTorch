@@ -88,11 +88,11 @@ void* tensor_get(tensor* t, vector* idx) {
 }
 
 void tensor_edit(tensor* t, vector* idx, void* val) {
-    if (t == NULL || t->data == NULL) return NULL;
+    if (t == NULL || t->data == NULL) return;
 
-    if (idx == NULL || idx->data == NULL) return NULL;
+    if (idx == NULL || idx->data == NULL) return;
 
-    if (t->shape->size != idx->size) return NULL;
+    if (t->shape->size != idx->size) return;
     //Проверка на корректность индексов
     for (int i = 0; i < t->shape->size; ++i) {
         if (vint(vector_get(idx, i)) + 1 > vint(vector_get(t->shape, i)) || vint(vector_get(idx, i)) < 0) return NULL;
@@ -248,7 +248,7 @@ tensor* tensor_hadamard_mult(tensor* t1, tensor* t2) {
 }
 
 static void tensor_mult_2d(tensor* t1, tensor* t2, tensor* t3,
-    int off1, int off2, int off3) {
+                           int off1,   int off2,   int off3) {
 
     int rank = (int)t1->shape->size;
     
@@ -256,14 +256,14 @@ static void tensor_mult_2d(tensor* t1, tensor* t2, tensor* t3,
     int K = vint(vector_get(t1->shape, rank - 1));
     int J = vint(vector_get(t2->shape, rank - 1));
     
-    int s1_i = vint(vector_get(t1->strides, rank - 2));
-    int s1_k = vint(vector_get(t1->strides, rank - 1));
+    int s1_i = vint(vector_get(t1->strides, -2)); // rank -
+    int s1_k = vint(vector_get(t1->strides, -1));
     
-    int s2_k = vint(vector_get(t2->strides, rank - 2));
-    int s2_j = vint(vector_get(t2->strides, rank - 1));
+    int s2_k = vint(vector_get(t2->strides, -2));
+    int s2_j = vint(vector_get(t2->strides, -1));
     
-    int s3_i = vint(vector_get(t3->strides, rank - 2));
-    int s3_j = vint(vector_get(t3->strides, rank - 1));
+    int s3_i = vint(vector_get(t3->strides, -2));
+    int s3_j = vint(vector_get(t3->strides, -1));
     
     // цикл i, k, j - оптимизация
     for (int i = 0; i < I; ++i) {
@@ -286,16 +286,14 @@ static void tensor_mult_2d(tensor* t1, tensor* t2, tensor* t3,
                     float current = vfloat(vector_get(t3->data, idx3));
                     float updated = current + (a * b);
                     vector_edit(t3->data, idx3, &updated);
-                }
-                else if (t1->type == INT) {
+                } else if (t1->type == INT) {
                     int a = vint(val_a_ptr);
                     int b = vint(vector_get(t2->data, idx2));
 
                     int current = vint(vector_get(t3->data, idx3));
                     int updated = current + (a * b);
                     vector_edit(t3->data, idx3, &updated);
-                }
-                else if (t1->type == DOUBLE) {
+                } else if (t1->type == DOUBLE) {
                     double a = vdouble(val_a_ptr);
                     double b = vdouble(vector_get(t2->data, idx2));
     
@@ -303,13 +301,16 @@ static void tensor_mult_2d(tensor* t1, tensor* t2, tensor* t3,
                     double updated = current + (a * b);
                     vector_edit(t3->data, idx3, &updated);
                 }
+                else {
+                    return NULL;
+                }
             }
         }
     }
 }
 
-static void __matmul_rec(tensor* A, tensor* B, tensor* Res,
-    int dim_idx, int offA, int offB, int offRes) {
+static void __matmul_rec(tensor* A,   tensor* B, tensor* Res,
+                         int dim_idx, int offA,  int offB,    int offRes) {
 
     int rank = A->shape->size;
 
@@ -341,7 +342,6 @@ tensor* tensor_mult(tensor* t1, tensor* t2) {
         if (vint(vector_get(t1->shape, i)) != vint(vector_get(t2->shape, i))) return NULL;
     }
 
-
     int K1 = vint(vector_get(t1->shape, -1));
     int K2 = vint(vector_get(t2->shape, -2));
     if (K1 != K2) return NULL;
@@ -349,7 +349,8 @@ tensor* tensor_mult(tensor* t1, tensor* t2) {
     // Форма результирующего тензора
     vector* res_shape = vector_copy(t1->shape);
     int N_val = vint(vector_get(t2->shape, -1));
-    vector_edit(res_shape, -1, &N_val); // Меняем K на N
+    // Меняем K на N
+    vector_edit(res_shape, -1, &N_val);
 
     size_t total_elements = 1;
     for (size_t i = 0; i < res_shape->size; i++) {
@@ -368,6 +369,9 @@ tensor* tensor_mult(tensor* t1, tensor* t2) {
     else if (t1->type == DOUBLE) {
         double zero = 0.0f;
         for (size_t i = 0; i < total_elements; i++) vector_append(res_data, &zero);
+    }
+    else {
+        return NULL;
     }
     tensor* res = tensor_(res_data, res_shape);
 
